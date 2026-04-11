@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using WebApp1.Models.DTO;
+using WebApp1.Repositories;
 
 namespace WebApp1.Controllers
 {
@@ -9,13 +10,16 @@ namespace WebApp1.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        public AuthController(UserManager<IdentityUser> userManager)
+        public UserManager<IdentityUser> userManager { get; set; }
+        public ITokenRepository tokenRepository { get; set; }
+
+        public AuthController(UserManager<IdentityUser> userManager, ITokenRepository tokenRepository)
         {
-            UserManager = userManager;
+            this.userManager = userManager;
+            this.tokenRepository = tokenRepository;
         }
 
-        public UserManager<IdentityUser> UserManager { get; }
-
+        
         //POST: /api/Auth/Register
         [HttpPost]
         [Route("Register")]
@@ -27,14 +31,14 @@ namespace WebApp1.Controllers
                 Email = registerRequestDTO.Username
             };
 
-            var identityResult = await UserManager.CreateAsync(identyUser, registerRequestDTO.Password);
+            var identityResult = await userManager.CreateAsync(identyUser, registerRequestDTO.Password);
 
             if (identityResult.Succeeded)
             {
                 //Adding roles to the user
                 if (registerRequestDTO.Roles != null && registerRequestDTO.Roles.Any())
                 {
-                    identityResult = await UserManager.AddToRolesAsync(identyUser, registerRequestDTO.Roles);
+                    identityResult = await userManager.AddToRolesAsync(identyUser, registerRequestDTO.Roles);
 
                     if (identityResult.Succeeded)
                     {
@@ -52,17 +56,27 @@ namespace WebApp1.Controllers
         [Route("Login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO loginRequestDTO)
         {
-            var user = await UserManager.FindByEmailAsync(loginRequestDTO.usename);
+            var user = await userManager.FindByEmailAsync(loginRequestDTO.username);
 
             if (user != null)
             {
-                var isPasswordValid = await UserManager.CheckPasswordAsync(user, loginRequestDTO.password);
-
+                var isPasswordValid = await userManager.CheckPasswordAsync(user, loginRequestDTO.password);
                 if (isPasswordValid)
                 {
-                    //Token generation logic will be here
+                    //Get user roles
+                    var userRoles = await userManager.GetRolesAsync(user);
 
-                    return Ok();
+                    //Create Token
+                    if (userRoles != null) { 
+                        var jwtToken = tokenRepository.CreateJWTToken(user, userRoles.ToList());
+
+                        var response = new LoginResponseDTO
+                        {
+                            JwtToken = jwtToken
+                        };
+
+                        return Ok(response);
+                    }
                 }
             }
 
