@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
+using Microsoft.OpenApi.Models;
 using System.Text;
 using WebApp1.Data;
 using WebApp1.Mappings;
@@ -17,7 +19,35 @@ builder.Services.AddOpenApi();
 
 // Add Swagger services
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options => {
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Walks API", Version = "v1" });
+    options.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        In = ParameterLocation.Header,
+        Scheme = JwtBearerDefaults.AuthenticationScheme,
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = JwtBearerDefaults.AuthenticationScheme,
+                },
+                Scheme = "oauth2",
+                Name = JwtBearerDefaults.AuthenticationScheme,
+                In = ParameterLocation.Header,
+            },
+            new List<string>()
+        }
+    });
+
+});
 
 builder.Services.AddScoped<IRegionRepository, SQLRegionRepository>();
 builder.Services.AddScoped<IWalkRepository, SQLWalkRepository>();
