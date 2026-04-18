@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WebAPI.Models.Domain;
+using WebApp1.Models.Domain;
 
 namespace WebApp1.Data
 {
@@ -13,6 +14,7 @@ namespace WebApp1.Data
         public DbSet<Difficulty> Difficulties { get; set; }
         public DbSet<Region> Regions { get; set; }
         public DbSet<Walk> Walks { get; set; }
+        public DbSet<Image> Images { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
