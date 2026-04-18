@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using WebApp1.Models.Domain;
 using WebApp1.Models.DTO;
+using WebApp1.Repositories;
 
 namespace WebApp1.Controllers
 {
@@ -8,6 +10,14 @@ namespace WebApp1.Controllers
     [ApiController]
     public class ImagesController : ControllerBase
     {
+        private readonly IImageRepository imageRepository;
+
+        public ImagesController(IImageRepository imageRepository)
+        {
+            this.imageRepository = imageRepository;
+        }
+
+        
 
         //POST: api/Images/Upload
         [HttpPost]
@@ -18,7 +28,19 @@ namespace WebApp1.Controllers
 
             if (ModelState.IsValid)
             {
-                //repository logic to upload the file
+                //convert DTO to domain model
+                var imageDomainModel = new Image
+                {
+                    File = request.File,
+                    FileName = request.FileName,
+                    FileDescription = request.FileDescription,
+                    FileExtension = Path.GetExtension(request.File.FileName).ToLower(),
+                    FileSizeInBytes = request.File.Length
+                };
+
+                await imageRepository.Upload(imageDomainModel);
+
+                return Ok(imageDomainModel);
             }
 
             return BadRequest(ModelState);
