@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using WebAPI.Models.Domain;
 using WebApp1.CustomActionsFilter;
 using WebApp1.Data;
@@ -18,26 +19,39 @@ namespace WebApp1.Controllers
         private readonly WalksDbContext dbContext;
         private readonly IRegionRepository regionRepository;
         private readonly IMapper mapper;
+        private readonly ILogger<RegionsController> logger;
 
-        public RegionsController(WalksDbContext dbContext, IRegionRepository regionRepository, IMapper mapper)
+        public RegionsController(WalksDbContext dbContext, IRegionRepository regionRepository, IMapper mapper, ILogger<RegionsController> logger)
         {
             this.dbContext = dbContext;
             this.regionRepository = regionRepository;
             this.mapper = mapper;
+            this.logger = logger;
         }
 
 
         // GET - api/Regions
         [HttpGet]
-        [Authorize(Roles = "reader, writer")]
+        //[Authorize(Roles = "reader, writer")]
         public async Task<IActionResult> GetAllAsync()
         {
-            var regions = await regionRepository.GetAllAsync();
+            try {
+                logger.LogInformation("Getting all regions method invoked");
 
-            //Mapping Domain Models to DTOs with auto mapper
-            var regionDTOs = mapper.Map<List<RegionDTO>>(regions);
+                var regions = await regionRepository.GetAllAsync();
 
-            return Ok(regionDTOs);
+                logger.LogInformation($"regions got from database: {JsonSerializer.Serialize(regions)}");
+
+                //Mapping Domain Models to DTOs with auto mapper
+                var regionDTOs = mapper.Map<List<RegionDTO>>(regions);
+
+                    return Ok(regionDTOs);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "An error occurred while getting all regions");
+                return StatusCode(500, "Internal server error");
+            }
         }
 
 
