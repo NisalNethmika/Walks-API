@@ -35,23 +35,14 @@ namespace WebApp1.Controllers
         //[Authorize(Roles = "reader, writer")]
         public async Task<IActionResult> GetAllAsync()
         {
-            try {
-                logger.LogInformation("Getting all regions method invoked");
+            var regions = await regionRepository.GetAllAsync();
 
-                var regions = await regionRepository.GetAllAsync();
+            logger.LogInformation($"regions got from database: {JsonSerializer.Serialize(regions)}");
 
-                logger.LogInformation($"regions got from database: {JsonSerializer.Serialize(regions)}");
+            //Mapping Domain Models to DTOs with auto mapper
+            var regionDTOs = mapper.Map<List<RegionDTO>>(regions);
 
-                //Mapping Domain Models to DTOs with auto mapper
-                var regionDTOs = mapper.Map<List<RegionDTO>>(regions);
-
-                    return Ok(regionDTOs);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "An error occurred while getting all regions");
-                return StatusCode(500, "Internal server error");
-            }
+            return Ok(regionDTOs);
         }
 
 

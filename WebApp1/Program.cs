@@ -7,6 +7,7 @@ using Serilog;
 using System.Text;
 using WebApp1.Data;
 using WebApp1.Mappings;
+using WebApp1.Middlewares;
 using WebApp1.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -85,6 +86,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseMiddleware<ExceptionHandlerMiddleware>();
 
 app.UseHttpsRedirection();
 
